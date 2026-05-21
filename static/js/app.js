@@ -48,7 +48,16 @@ function switchTab(tabName) {
 async function loadResumo() {
     const data = await api.get("/api/summary");
     renderSummaryTable(data);
-    renderResumoChart(data);
+    populateChartFilter(data.rows);
+    renderResumoChart(data, document.getElementById("chart-dev-filter").value);
+}
+
+function populateChartFilter(rows) {
+    const sel     = document.getElementById("chart-dev-filter");
+    const current = sel.value;
+    sel.innerHTML = `<option value="all">🌐 Geral (Todos)</option>` +
+        rows.map(r => `<option value="${escHtml(r.dev)}">${escHtml(r.dev)}</option>`).join("");
+    if ([...sel.options].some(o => o.value === current)) sel.value = current;
 }
 
 function renderSummaryTable({ rows, totals }) {
@@ -93,15 +102,16 @@ function renderSummaryTable({ rows, totals }) {
     tbody.appendChild(tr);
 }
 
-function renderResumoChart({ rows }) {
-    const devs    = rows.map(r => r.dev);
+function renderResumoChart({ rows }, filter = "all") {
+    const filteredRows = filter === "all" ? rows : rows.filter(r => r.dev === filter);
+    const devs    = filteredRows.map(r => r.dev);
     const ACTIVE  = ["NOW", "PLAN", "DELEGAR", "BACKLOG"];
     const colors  = { NOW: "#E57300", PLAN: "#1565C0", DELEGAR: "#F59E0B", BACKLOG: "#546E7A" };
     const labels  = { NOW: "Urgente Now", PLAN: "Não Urgente Plan", DELEGAR: "Delegar", BACKLOG: "Backlog" };
 
     const datasets = ACTIVE.map(q => ({
         label:           labels[q],
-        data:            rows.map(r => r[q]),
+        data:            filteredRows.map(r => r[q]),
         backgroundColor: colors[q] + "CC",
         borderColor:     colors[q],
         borderWidth:     1.5,
@@ -296,9 +306,14 @@ function escHtml(str) {
 async function init() {
     team = await api.get("/api/team");
 
-    // Tab buttons
     document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    document.getElementById("chart-dev-filter").addEventListener("change", async () => {
+        const data   = await api.get("/api/summary");
+        const filter = document.getElementById("chart-dev-filter").value;
+        renderResumoChart(data, filter);
     });
 
     switchTab("resumo");

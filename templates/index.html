@@ -62,7 +62,15 @@
       </div>
 
       <!-- Chart -->
-      <h3 class="chart-section-title">Tarefas ativas por desenvolvedor</h3>
+      <div class="chart-header">
+        <h3 class="chart-section-title">Tarefas ativas por desenvolvedor</h3>
+        <div class="chart-filter-group">
+          <label for="chart-dev-filter">Colaborador:</label>
+          <select id="chart-dev-filter">
+            <option value="all">🌐 Geral (Todos)</option>
+          </select>
+        </div>
+      </div>
       <div class="chart-wrap">
         <canvas id="resumo-chart"></canvas>
       </div>

@@ -402,14 +402,48 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
 .summary-table thead .th-finplan { background: var(--fin-plan); }
 .summary-table thead .th-tfin    { background: #1B5E20; }
 
-/* ── Chart section title ────────────────────────────────── */
+/* ── Chart header + filter ──────────────────────────────── */
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
 .chart-section-title {
     font-size: 0.95rem;
     font-weight: 700;
     color: #555;
-    margin-bottom: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin: 0;
+}
+.chart-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.chart-filter-group label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #555;
+    white-space: nowrap;
+}
+.chart-filter-group select {
+    padding: 6px 14px;
+    border: 2px solid var(--now);
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    color: #333;
+    background: #fff;
+    cursor: pointer;
+    min-width: 190px;
+    transition: border-color 0.15s;
+}
+.chart-filter-group select:focus {
+    outline: none;
+    border-color: #bf4800;
 }
 
 /* ── Legend card ────────────────────────────────────────── */
