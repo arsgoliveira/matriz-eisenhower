@@ -104,6 +104,7 @@ function storageTasks()       { return JSON.parse(localStorage.getItem(STORAGE_T
 function storageTeam()        { return JSON.parse(localStorage.getItem(STORAGE_TEAM)   || "[]"); }
 function storageNextId()      { return Number(localStorage.getItem(STORAGE_NEXTID)     || "76"); }
 function storageSaveTasks(t)  { localStorage.setItem(STORAGE_TASKS,  JSON.stringify(t)); }
+function storageSaveTeam(t)   { localStorage.setItem(STORAGE_TEAM,   JSON.stringify(t)); }
 function storageNextIdBump()  {
     const n = storageNextId();
     localStorage.setItem(STORAGE_NEXTID, String(n + 1));
@@ -112,6 +113,23 @@ function storageNextIdBump()  {
 
 // ── Data access API (mirrors the Flask API) ───────────────────────────────────
 function dbGetTeam()          { return storageTeam(); }
+
+function dbAddMember(name) {
+    const trimmed = String(name || "").trim();
+    if (!trimmed) return false;
+    const team = storageTeam();
+    if (team.includes(trimmed)) return false;
+    storageSaveTeam([...team, trimmed]);
+    return true;
+}
+
+function dbRemoveMember(name) {
+    const team    = storageTeam();
+    const updated = team.filter(m => m !== name);
+    if (updated.length === team.length) return false;
+    storageSaveTeam(updated);
+    return true;
+}
 
 function dbGetTasks(quadrant) {
     const all = storageTasks();
@@ -139,13 +157,12 @@ function dbDelete(id) {
 }
 
 function dbGetSummary() {
-    const tasks  = storageTasks();
-    const team   = storageTeam();
-    const EXCL   = new Set(["Renan (Externo)", "Guilherme"]);
-    const rows   = {};
+    const tasks = storageTasks();
+    const team  = storageTeam();
+    const rows  = {};
 
     for (const dev of team) {
-        if (!EXCL.has(dev)) rows[dev] = { NOW:0, PLAN:0, DELEGAR:0, BACKLOG:0, FIN_NOW:0, FIN_PLAN:0 };
+        rows[dev] = { NOW:0, PLAN:0, DELEGAR:0, BACKLOG:0, FIN_NOW:0, FIN_PLAN:0 };
     }
     for (const t of tasks) {
         if (rows[t.responsible] && t.quadrant in rows[t.responsible]) rows[t.responsible][t.quadrant]++;

@@ -18,7 +18,7 @@
 
 <nav class="tab-nav">
   <button type="button" class="tab-btn active" data-tab="resumo">📊 Resumo</button>
-  <button type="button" class="tab-btn" data-tab="now">🔴 Urgente Now</button>
+  <button type="button" class="tab-btn" data-tab="now">🟠 Urgente Now</button>
   <button type="button" class="tab-btn" data-tab="plan">🔵 Não Urgente Plan</button>
   <button type="button" class="tab-btn" data-tab="delegar">🟡 Delegar</button>
   <button type="button" class="tab-btn" data-tab="backlog">⚪ Backlog</button>
@@ -31,8 +31,13 @@
   <!-- RESUMO -->
   <div id="tab-resumo" class="tab-content active">
     <div class="card">
-      <p class="resumo-title">HidroMares · SGS — Matriz de Eisenhower</p>
-      <p class="resumo-sub">Resumo de tarefas por desenvolvedor e quadrante</p>
+      <div class="resumo-header">
+        <div>
+          <p class="resumo-title">HidroMares · SGS — Matriz de Eisenhower</p>
+          <p class="resumo-sub">Resumo de tarefas por desenvolvedor e quadrante</p>
+        </div>
+        <button type="button" class="btn-team" id="btn-manage-team">👥 Gerenciar Equipe</button>
+      </div>
 
       <div class="summary-table-wrap">
         <table class="summary-table">
@@ -51,7 +56,7 @@
             </tr>
           </thead>
           <tbody id="summary-tbody">
-            <tr><td colspan="10" style="text-align:center;padding:20px;color:#bbb">Carregando…</td></tr>
+            <tr><td colspan="10" class="loading-cell">Carregando…</td></tr>
           </tbody>
         </table>
       </div>
@@ -142,6 +147,25 @@
   <div class="modal-footer">
     <button type="button" class="btn-cancel" id="modal-cancel-btn">Cancelar</button>
     <button type="button" class="btn-save"   id="modal-save-btn">Salvar</button>
+  </div>
+</dialog>
+
+<!-- TEAM MODAL -->
+<dialog id="team-modal">
+  <div class="modal-header">
+    <h3>👥 Gerenciar Equipe</h3>
+    <button type="button" class="modal-close" id="team-close-btn" title="Fechar">✕</button>
+  </div>
+  <div class="modal-body">
+    <p class="team-modal-hint">Adicione ou remova colaboradores. As tarefas existentes não serão alteradas ao remover.</p>
+    <ul id="team-list" class="team-list"></ul>
+    <div class="team-add-row">
+      <input type="text" id="team-new-name" placeholder="Nome do colaborador…" maxlength="60">
+      <button type="button" class="btn-save" id="team-add-btn">+ Adicionar</button>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn-cancel" id="team-cancel-btn">Fechar</button>
   </div>
 </dialog>
 

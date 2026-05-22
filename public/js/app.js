@@ -267,6 +267,60 @@ function refreshCurrentTab(quadrant) {
     if (container?.classList.contains("active")) loadTaskTab(container, quadrant);
 }
 
+// ── TEAM MODAL ────────────────────────────────────────────────────────────────
+const teamModal = document.getElementById("team-modal");
+
+function openTeamModal() {
+    renderTeamList();
+    teamModal.showModal();
+}
+
+function closeTeamModal() { teamModal.close(); }
+
+function renderTeamList() {
+    const team = dbGetTeam();
+    const ul   = document.getElementById("team-list");
+    if (team.length === 0) {
+        ul.innerHTML = `<li class="team-list-empty">Nenhum colaborador cadastrado.</li>`;
+        return;
+    }
+    ul.innerHTML = team.map(name => `
+        <li class="team-list-item">
+            <span>${escHtml(name)}</span>
+            <button type="button" class="btn-icon delete" data-member="${escHtml(name)}" title="Remover">🗑️</button>
+        </li>`).join("");
+
+    ul.querySelectorAll("[data-member]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (!confirm(`Remover "${btn.dataset.member}" da equipe?\nAs tarefas existentes não serão alteradas.`)) return;
+            dbRemoveMember(btn.dataset.member);
+            renderTeamList();
+            loadResumo();
+        });
+    });
+}
+
+document.getElementById("team-close-btn").addEventListener("click", closeTeamModal);
+document.getElementById("team-cancel-btn").addEventListener("click", closeTeamModal);
+teamModal.addEventListener("click", e => { if (e.target === teamModal) closeTeamModal(); });
+
+document.getElementById("btn-manage-team").addEventListener("click", openTeamModal);
+
+document.getElementById("team-add-btn").addEventListener("click", () => {
+    const input = document.getElementById("team-new-name");
+    const name  = input.value.trim();
+    if (!name) { input.focus(); return; }
+    if (!dbAddMember(name)) { alert(`"${name}" já existe na equipe.`); return; }
+    input.value = "";
+    input.focus();
+    renderTeamList();
+    loadResumo();
+});
+
+document.getElementById("team-new-name").addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("team-add-btn").click();
+});
+
 // ── Util ──────────────────────────────────────────────────────────────────────
 function escHtml(str) {
     return String(str ?? "")

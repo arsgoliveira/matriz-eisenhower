@@ -19,11 +19,35 @@ let chart   = null;
 let editing = null; // null = adding new | number = task id being edited
 
 // ── API helpers ───────────────────────────────────────────────────────────────
+function showApiError(msg) {
+    let el = document.getElementById("api-error-banner");
+    if (!el) {
+        el = document.createElement("div");
+        el.id = "api-error-banner";
+        el.className = "api-error-banner";
+        document.body.prepend(el);
+    }
+    el.textContent = "⚠ " + msg;
+    el.style.display = "block";
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => { el.style.display = "none"; }, 6000);
+}
+
 const api = {
-    async get(url)         { const r = await fetch(url);          return r.json(); },
-    async post(url, body)  { const r = await fetch(url, { method: "POST",   headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return r.json(); },
-    async put(url, body)   { const r = await fetch(url, { method: "PUT",    headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return r.json(); },
-    async del(url)         {         await fetch(url, { method: "DELETE" }); },
+    async _req(url, opts = {}) {
+        try {
+            const r = await fetch(url, opts);
+            if (!r.ok) throw new Error(`HTTP ${r.status} — ${r.statusText}`);
+            return r;
+        } catch (err) {
+            showApiError(`Erro de comunicação com o servidor: ${err.message}`);
+            throw err;
+        }
+    },
+    async get(url)        { return (await this._req(url)).json(); },
+    async post(url, body) { return (await this._req(url, { method: "POST",   headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json(); },
+    async put(url, body)  { return (await this._req(url, { method: "PUT",    headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })).json(); },
+    async del(url)        { await this._req(url, { method: "DELETE" }); },
 };
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
@@ -46,10 +70,12 @@ function switchTab(tabName) {
 
 // ── RESUMO ────────────────────────────────────────────────────────────────────
 async function loadResumo() {
-    const data = await api.get("/api/summary");
-    renderSummaryTable(data);
-    populateChartFilter(data.rows);
-    renderResumoChart(data, document.getElementById("chart-dev-filter").value);
+    try {
+        const data = await api.get("/api/summary");
+        renderSummaryTable(data);
+        populateChartFilter(data.rows);
+        renderResumoChart(data, document.getElementById("chart-dev-filter").value);
+    } catch { /* erro já exibido pelo api helper */ }
 }
 
 function populateChartFilter(rows) {
@@ -141,8 +167,10 @@ function renderResumoChart({ rows }, filter = "all") {
 
 // ── TASK TABS ─────────────────────────────────────────────────────────────────
 async function loadTaskTab(container, quadrant) {
-    const tasks = await api.get(`/api/tasks?quadrant=${quadrant}`);
-    renderTaskTab(container, quadrant, tasks);
+    try {
+        const tasks = await api.get(`/api/tasks?quadrant=${quadrant}`);
+        renderTaskTab(container, quadrant, tasks);
+    } catch { /* erro já exibido pelo api helper */ }
 }
 
 function renderTaskTab(container, quadrant, tasks) {
@@ -272,15 +300,16 @@ document.getElementById("modal-save-btn").addEventListener("click", async () => 
 
     if (!task.desc) { alert("A descrição é obrigatória."); return; }
 
-    if (editing !== null) {
-        await api.put(`/api/tasks/${editing}`, task);
-    } else {
-        await api.post("/api/tasks", task);
-    }
-
-    closeModal();
-    refreshCurrentTab(task.quadrant);
-    if (document.getElementById("tab-resumo").classList.contains("active")) loadResumo();
+    try {
+        if (editing !== null) {
+            await api.put(`/api/tasks/${editing}`, task);
+        } else {
+            await api.post("/api/tasks", task);
+        }
+        closeModal();
+        refreshCurrentTab(task.quadrant);
+        if (document.getElementById("tab-resumo").classList.contains("active")) loadResumo();
+    } catch { /* erro já exibido pelo api helper */ }
 });
 
 function refreshCurrentTab(quadrant) {
@@ -304,16 +333,22 @@ function escHtml(str) {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 async function init() {
-    team = await api.get("/api/team");
+    try {
+        team = await api.get("/api/team");
+    } catch {
+        team = [];
+    }
 
     document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
 
     document.getElementById("chart-dev-filter").addEventListener("change", async () => {
-        const data   = await api.get("/api/summary");
-        const filter = document.getElementById("chart-dev-filter").value;
-        renderResumoChart(data, filter);
+        try {
+            const data   = await api.get("/api/summary");
+            const filter = document.getElementById("chart-dev-filter").value;
+            renderResumoChart(data, filter);
+        } catch { /* erro já exibido pelo api helper */ }
     });
 
     switchTab("resumo");

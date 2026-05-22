@@ -270,7 +270,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
     letter-spacing: 0.3px;
 }
 .status-chip.ativo      { background: #E8F5E9; color: #2E7D32; }
-.status-chip.finalizado { background: #E3F2FD; color: #1565C0; }
+.status-chip.finalizado { background: #E8F5E9; color: #2E7D32; }
 .status-chip.andamento  { background: #FFF8E1; color: #E65100; }
 
 /* Action buttons in table */
@@ -466,9 +466,91 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
 .task-table .col-w-actions  { width: 80px; }
 .task-table .col-quadrant-label { font-size: 0.78rem; color: #666; }
 
+/* ── Resumo header ──────────────────────────────────────── */
+.resumo-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 0;
+}
+.btn-team {
+    padding: 8px 16px;
+    background: var(--plan);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.btn-team:hover { background: #0D47A1; }
+
+/* ── Team modal ─────────────────────────────────────────── */
+.team-modal-hint {
+    font-size: 0.82rem;
+    color: #888;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+.team-list {
+    list-style: none;
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: var(--radius);
+    margin-bottom: 14px;
+}
+.team-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+}
+.team-list-item:last-child { border-bottom: none; }
+.team-list-empty {
+    padding: 20px;
+    text-align: center;
+    color: #bbb;
+    font-style: italic;
+    font-size: 0.88rem;
+}
+.team-add-row {
+    display: flex;
+    gap: 10px;
+}
+.team-add-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    color: #222;
+    transition: border-color 0.15s;
+}
+.team-add-row input:focus {
+    outline: none;
+    border-color: var(--plan);
+}
+
+/* ── Loading cell ───────────────────────────────────────── */
+.loading-cell {
+    text-align: center;
+    padding: 20px;
+    color: #bbb;
+}
+
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 700px) {
     header h1 { font-size: 1rem; }
     main { padding: 16px 10px; }
     .form-row { grid-template-columns: 1fr; }
+    .resumo-header { flex-direction: column; }
+    .team-add-row { flex-direction: column; }
 }
