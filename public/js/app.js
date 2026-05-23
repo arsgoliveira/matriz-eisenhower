@@ -1,16 +1,42 @@
 // ── Config ───────────────────────────────────────────────────────────────────
 const Q = {
-    NOW:      { label:"Urgente — Now (Importante)",        cls:"q-now",      color:"#E57300" },
-    PLAN:     { label:"Não Urgente — Plan (Importante)",   cls:"q-plan",     color:"#1565C0" },
-    DELEGAR:  { label:"Delegar (Urgente + Não Importante)",cls:"q-delegar",  color:"#F59E0B" },
-    BACKLOG:  { label:"Backlog (Não Urgente + Não Imp.)",  cls:"q-backlog",  color:"#546E7A" },
-    FIN_NOW:  { label:"Finalizados — Now",                 cls:"q-fin-now",  color:"#2E7D32" },
-    FIN_PLAN: { label:"Finalizados — Plan",                cls:"q-fin-plan", color:"#00695C" },
+    NOW:      { label:"Urgente — Now (Importante)",         cls:"q-now",      color:"#E57300" },
+    PLAN:     { label:"Não Urgente — Plan (Importante)",    cls:"q-plan",     color:"#1565C0" },
+    DELEGAR:  { label:"Delegar (Urgente + Não Importante)", cls:"q-delegar",  color:"#F59E0B" },
+    BACKLOG:  { label:"Backlog (Não Urgente + Não Imp.)",   cls:"q-backlog",  color:"#546E7A" },
+    FIN_NOW:  { label:"Finalizados — Now",                  cls:"q-fin-now",  color:"#2E7D32" },
+    FIN_PLAN: { label:"Finalizados — Plan",                 cls:"q-fin-plan", color:"#00695C" },
 };
 
 const TAB_QUADRANT = {
     now:"NOW", plan:"PLAN", delegar:"DELEGAR",
     backlog:"BACKLOG", fin_now:"FIN_NOW", fin_plan:"FIN_PLAN",
+};
+
+const CAT_COLORS = {
+    "SGS — 1º Acesso":            "#7B1FA2",
+    "Chamado SGS":                "#C62828",
+    "Chamado Jira":               "#1565C0",
+    "Atendimento Interno":        "#E65100",
+    "Onboarding de Colaborador":  "#2E7D32",
+    "Offboarding de Colaborador": "#B71C1C",
+    "Manutenção de Equipamentos": "#FF6F00",
+    "Desenvolvimento":            "#00695C",
+    "Documentação / Manuais":     "#546E7A",
+    "Outros":                     "#795548",
+};
+
+const CAT_SHORT = {
+    "SGS — 1º Acesso":            "SGS 1º Acesso",
+    "Chamado SGS":                "Chamado SGS",
+    "Chamado Jira":               "Chamado Jira",
+    "Atendimento Interno":        "Atend. Interno",
+    "Onboarding de Colaborador":  "Onboarding",
+    "Offboarding de Colaborador": "Offboarding",
+    "Manutenção de Equipamentos": "Manutenção",
+    "Desenvolvimento":            "Desenvolvimento",
+    "Documentação / Manuais":     "Documentação",
+    "Outros":                     "Outros",
 };
 
 let chart   = null;
@@ -36,17 +62,17 @@ function switchTab(tabName) {
 // ── RESUMO ────────────────────────────────────────────────────────────────────
 function loadResumo() {
     const data = dbGetSummary();
+    updateKpis(data.totals);
     renderSummaryTable(data);
-    populateChartFilter(data.rows);
-    renderResumoChart(data, document.getElementById("chart-dev-filter").value);
+    renderResumoChart(data);
 }
 
-function populateChartFilter(rows) {
-    const sel     = document.getElementById("chart-dev-filter");
-    const current = sel.value;
-    sel.innerHTML = `<option value="all">🌐 Geral (Todos)</option>` +
-        rows.map(r => `<option value="${escHtml(r.dev)}">${escHtml(r.dev)}</option>`).join("");
-    if ([...sel.options].some(o => o.value === current)) sel.value = current;
+function updateKpis(totals) {
+    document.getElementById("kpi-now").textContent     = totals.NOW     ?? 0;
+    document.getElementById("kpi-plan").textContent    = totals.PLAN    ?? 0;
+    document.getElementById("kpi-delegar").textContent = totals.DELEGAR ?? 0;
+    document.getElementById("kpi-backlog").textContent = totals.BACKLOG ?? 0;
+    document.getElementById("kpi-fin").textContent     = totals.total_fin ?? 0;
 }
 
 function renderSummaryTable({ rows, totals }) {
@@ -61,8 +87,9 @@ function renderSummaryTable({ rows, totals }) {
 
     tbody.innerHTML = "";
     rows.forEach(r => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${escHtml(r.dev)}</td>`;
+        const tr    = document.createElement("tr");
+        const color = CAT_COLORS[r.cat] ?? "#555";
+        tr.innerHTML = `<td><span class="cat-dot" style="background:${color}"></span>${escHtml(r.cat)}</td>`;
         tr.appendChild(mkCell(r.NOW,         "col-now"));
         tr.appendChild(mkCell(r.PLAN,        "col-plan"));
         tr.appendChild(mkCell(r.DELEGAR,     "col-delegar"));
@@ -90,16 +117,16 @@ function renderSummaryTable({ rows, totals }) {
     tbody.appendChild(tr);
 }
 
-function renderResumoChart({ rows }, filter = "all") {
-    const devs    = (filter === "all" ? rows : rows.filter(r => r.dev === filter)).map(r => r.dev);
-    const filteredRows = filter === "all" ? rows : rows.filter(r => r.dev === filter);
-    const ACTIVE  = ["NOW","PLAN","DELEGAR","BACKLOG"];
+function renderResumoChart({ rows }) {
+    const active  = rows.filter(r => r.total_ativo > 0);
+    const labels  = active.map(r => CAT_SHORT[r.cat] ?? r.cat);
+    const ACTIVE  = ["NOW", "PLAN", "DELEGAR", "BACKLOG"];
     const colors  = { NOW:"#E57300", PLAN:"#1565C0", DELEGAR:"#F59E0B", BACKLOG:"#546E7A" };
-    const labels  = { NOW:"Urgente Now", PLAN:"Não Urgente Plan", DELEGAR:"Delegar", BACKLOG:"Backlog" };
+    const labelsQ = { NOW:"Urgente Now", PLAN:"Não Urgente Plan", DELEGAR:"Delegar", BACKLOG:"Backlog" };
 
     const datasets = ACTIVE.map(q => ({
-        label:           labels[q],
-        data:            filteredRows.map(r => r[q]),
+        label:           labelsQ[q],
+        data:            active.map(r => r[q]),
         backgroundColor: colors[q] + "CC",
         borderColor:     colors[q],
         borderWidth:     1.5,
@@ -111,7 +138,7 @@ function renderResumoChart({ rows }, filter = "all") {
     const ctx = document.getElementById("resumo-chart").getContext("2d");
     chart = new Chart(ctx, {
         type: "bar",
-        data: { labels: devs, datasets },
+        data: { labels, datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -120,7 +147,7 @@ function renderResumoChart({ rows }, filter = "all") {
                 tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}` } },
             },
             scales: {
-                x: { grid:{ display:false } },
+                x: { grid:{ display:false }, ticks:{ maxRotation:30 } },
                 y: { beginAtZero:true, ticks:{ stepSize:1 }, grid:{ color:"#f0f0f0" } },
             },
         },
@@ -154,11 +181,11 @@ function renderTaskTab(container, quadrant, tasks) {
                     <thead>
                         <tr>
                             <th class="col-w-code">#</th>
-                            <th class="col-w-resp">Responsável</th>
+                            <th class="col-w-cat">Tipo de Tarefa</th>
                             <th>Descrição</th>
+                            <th class="col-w-chamado">Chamado</th>
                             <th class="col-w-deadline">Prazo</th>
                             <th class="col-w-status">Status</th>
-                            <th class="col-w-quadrant">Quadrante</th>
                             <th class="col-w-actions">Ações</th>
                         </tr>
                     </thead>
@@ -189,15 +216,18 @@ function renderTaskTab(container, quadrant, tasks) {
 
 function buildTaskRow(t) {
     const statusCls = { "Ativo":"ativo", "Finalizado":"finalizado", "Em Andamento":"andamento" }[t.status] ?? "ativo";
-    const qLabel    = Q[t.quadrant]?.label ?? t.quadrant;
+    const color = CAT_COLORS[t.category] ?? "#555";
+    const chamadoHtml = t.chamado
+        ? `<span class="chamado-chip">${escHtml(t.chamado)}</span>`
+        : `<span class="chamado-empty">—</span>`;
     return `
         <tr>
             <td><span class="code-badge">${t.code}</span></td>
-            <td>${escHtml(t.responsible)}</td>
+            <td><span class="cat-badge" style="border-left-color:${color}">${escHtml(t.category ?? "")}</span></td>
             <td>${escHtml(t.desc)}</td>
+            <td>${chamadoHtml}</td>
             <td>${t.deadline ? `<span class="deadline-chip">${escHtml(t.deadline)}</span>` : "—"}</td>
             <td><span class="status-chip ${statusCls}">${escHtml(t.status)}</span></td>
-            <td class="col-quadrant-label">${escHtml(qLabel)}</td>
             <td>
                 <button type="button" class="btn-icon edit"   data-action="edit"   data-id="${t.id}" title="Editar">✏️</button>
                 <button type="button" class="btn-icon delete" data-action="delete" data-id="${t.id}" title="Remover">🗑️</button>
@@ -215,18 +245,15 @@ const modal = document.getElementById("task-modal");
 function openModal(task, defaultQuadrant) {
     editing = task ? task.id : null;
 
-    document.getElementById("modal-title").textContent    = task ? "Editar Tarefa" : "Adicionar Tarefa";
-    document.getElementById("modal-task-id").value        = task ? task.id       : "";
-    document.getElementById("modal-code").value           = task ? task.code     : "";
-    document.getElementById("modal-desc").value           = task ? task.desc     : "";
-    document.getElementById("modal-deadline").value       = task ? task.deadline : "";
-
-    const selResp = document.getElementById("modal-responsible");
-    selResp.innerHTML = dbGetTeam().map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join("");
-    if (task) selResp.value = task.responsible;
-
-    document.getElementById("modal-quadrant").value = task ? task.quadrant : (defaultQuadrant ?? "NOW");
-    document.getElementById("modal-status").value   = task ? task.status   : "Ativo";
+    document.getElementById("modal-title").textContent  = task ? "Editar Tarefa" : "Adicionar Tarefa";
+    document.getElementById("modal-task-id").value      = task ? task.id       : "";
+    document.getElementById("modal-code").value         = task ? task.code     : "";
+    document.getElementById("modal-desc").value         = task ? task.desc     : "";
+    document.getElementById("modal-chamado").value      = task ? (task.chamado ?? "") : "";
+    document.getElementById("modal-deadline").value     = task ? task.deadline : "";
+    document.getElementById("modal-category").value    = task ? (task.category ?? "Outros") : "Outros";
+    document.getElementById("modal-quadrant").value    = task ? task.quadrant : (defaultQuadrant ?? "NOW");
+    document.getElementById("modal-status").value      = task ? task.status   : "Ativo";
 
     modal.showModal();
 }
@@ -239,12 +266,13 @@ modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
 
 document.getElementById("modal-save-btn").addEventListener("click", () => {
     const task = {
-        code:        Number(document.getElementById("modal-code").value) || 0,
-        responsible: document.getElementById("modal-responsible").value,
-        desc:        document.getElementById("modal-desc").value.trim(),
-        deadline:    document.getElementById("modal-deadline").value.trim(),
-        status:      document.getElementById("modal-status").value,
-        quadrant:    document.getElementById("modal-quadrant").value,
+        code:     Number(document.getElementById("modal-code").value) || 0,
+        category: document.getElementById("modal-category").value,
+        desc:     document.getElementById("modal-desc").value.trim(),
+        chamado:  document.getElementById("modal-chamado").value.trim(),
+        deadline: document.getElementById("modal-deadline").value.trim(),
+        status:   document.getElementById("modal-status").value,
+        quadrant: document.getElementById("modal-quadrant").value,
     };
 
     if (!task.desc) { alert("A descrição é obrigatória."); return; }
@@ -267,60 +295,6 @@ function refreshCurrentTab(quadrant) {
     if (container?.classList.contains("active")) loadTaskTab(container, quadrant);
 }
 
-// ── TEAM MODAL ────────────────────────────────────────────────────────────────
-const teamModal = document.getElementById("team-modal");
-
-function openTeamModal() {
-    renderTeamList();
-    teamModal.showModal();
-}
-
-function closeTeamModal() { teamModal.close(); }
-
-function renderTeamList() {
-    const team = dbGetTeam();
-    const ul   = document.getElementById("team-list");
-    if (team.length === 0) {
-        ul.innerHTML = `<li class="team-list-empty">Nenhum colaborador cadastrado.</li>`;
-        return;
-    }
-    ul.innerHTML = team.map(name => `
-        <li class="team-list-item">
-            <span>${escHtml(name)}</span>
-            <button type="button" class="btn-icon delete" data-member="${escHtml(name)}" title="Remover">🗑️</button>
-        </li>`).join("");
-
-    ul.querySelectorAll("[data-member]").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (!confirm(`Remover "${btn.dataset.member}" da equipe?\nAs tarefas existentes não serão alteradas.`)) return;
-            dbRemoveMember(btn.dataset.member);
-            renderTeamList();
-            loadResumo();
-        });
-    });
-}
-
-document.getElementById("team-close-btn").addEventListener("click", closeTeamModal);
-document.getElementById("team-cancel-btn").addEventListener("click", closeTeamModal);
-teamModal.addEventListener("click", e => { if (e.target === teamModal) closeTeamModal(); });
-
-document.getElementById("btn-manage-team").addEventListener("click", openTeamModal);
-
-document.getElementById("team-add-btn").addEventListener("click", () => {
-    const input = document.getElementById("team-new-name");
-    const name  = input.value.trim();
-    if (!name) { input.focus(); return; }
-    if (!dbAddMember(name)) { alert(`"${name}" já existe na equipe.`); return; }
-    input.value = "";
-    input.focus();
-    renderTeamList();
-    loadResumo();
-});
-
-document.getElementById("team-new-name").addEventListener("keydown", e => {
-    if (e.key === "Enter") document.getElementById("team-add-btn").click();
-});
-
 // ── Util ──────────────────────────────────────────────────────────────────────
 function escHtml(str) {
     return String(str ?? "")
@@ -333,12 +307,6 @@ storageInit();
 
 document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-});
-
-document.getElementById("chart-dev-filter").addEventListener("change", () => {
-    const data   = dbGetSummary();
-    const filter = document.getElementById("chart-dev-filter").value;
-    renderResumoChart(data, filter);
 });
 
 switchTab("resumo");
