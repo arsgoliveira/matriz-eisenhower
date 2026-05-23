@@ -66,8 +66,7 @@ header h1 span { color: var(--now); }
 .tab-btn[data-tab="plan"].active     { color: #5ba4f5; border-bottom-color: #5ba4f5; }
 .tab-btn[data-tab="delegar"].active  { color: var(--delegar); border-bottom-color: var(--delegar); }
 .tab-btn[data-tab="backlog"].active  { color: #90A4AE; border-bottom-color: #90A4AE; }
-.tab-btn[data-tab="fin_now"].active  { color: #66BB6A; border-bottom-color: #66BB6A; }
-.tab-btn[data-tab="fin_plan"].active { color: #4DB6AC; border-bottom-color: #4DB6AC; }
+.tab-btn[data-tab="finalizado"].active { color: #66BB6A; border-bottom-color: #66BB6A; }
 
 /* ── Main content ──────────────────────────────────────── */
 main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
@@ -290,8 +289,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 .task-table.q-plan    thead tr { background: var(--plan); }
 .task-table.q-delegar thead tr { background: var(--delegar); }
 .task-table.q-backlog thead tr { background: var(--backlog); }
-.task-table.q-fin-now thead tr { background: var(--fin-now); }
-.task-table.q-fin-plan thead tr { background: var(--fin-plan); }
+.task-table.q-fin thead tr { background: var(--fin-now); }
 
 .task-table tbody tr td {
     padding: 9px 14px;

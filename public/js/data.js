@@ -79,7 +79,7 @@ function dbDelete(id) {
 
 function dbGetSummary() {
     const tasks = storageTasks();
-    const QUADS = ["NOW", "PLAN", "DELEGAR", "BACKLOG", "FIN_NOW", "FIN_PLAN"];
+    const QUADS = ["NOW", "PLAN", "DELEGAR", "BACKLOG", "FINALIZADO"];
     const rows  = {};
 
     for (const cat of TASK_CATEGORIES) {
@@ -87,8 +87,11 @@ function dbGetSummary() {
     }
     for (const t of tasks) {
         const cat = t.category || "Outros";
-        if (!rows[cat]) rows[cat] = Object.fromEntries(QUADS.map(q => [q, 0]));
-        if (t.quadrant in rows[cat]) rows[cat][t.quadrant]++;
+        // compatibilidade com dados antigos
+        let q = t.quadrant;
+        if (q === "FIN_NOW" || q === "FIN_PLAN") q = "FINALIZADO";
+        if (!rows[cat]) rows[cat] = Object.fromEntries(QUADS.map(q2 => [q2, 0]));
+        if (q in rows[cat]) rows[cat][q]++;
     }
 
     const result = [];
@@ -96,13 +99,12 @@ function dbGetSummary() {
 
     for (const [cat, c] of Object.entries(rows)) {
         const active = c.NOW + c.PLAN + c.DELEGAR + c.BACKLOG;
-        const fin    = c.FIN_NOW + c.FIN_PLAN;
+        const fin    = c.FINALIZADO;
         if (active + fin === 0) continue;
         result.push({ cat, ...c, total_ativo: active, total_fin: fin, grand_total: active + fin });
         for (const k of QUADS) totals[k] += c[k];
     }
 
     const total_ativo = totals.NOW + totals.PLAN + totals.DELEGAR + totals.BACKLOG;
-    const total_fin   = totals.FIN_NOW + totals.FIN_PLAN;
-    return { rows: result, totals: { ...totals, total_ativo, total_fin, grand_total: total_ativo + total_fin } };
+    return { rows: result, totals: { ...totals, total_ativo, total_fin: totals.FINALIZADO, grand_total: total_ativo + totals.FINALIZADO } };
 }

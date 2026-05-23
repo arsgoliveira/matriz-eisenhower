@@ -20,18 +20,18 @@ TASK_CATEGORIES = [
 
 INITIAL_TASKS = [
     # ── URGENTE NOW ──────────────────────────────────────────────────────────
-    {"id": 1, "code": 1, "category": "SGS — 1º Acesso",          "desc": "Responder solicitação de 1º acesso — usuário novo portal SGS",        "chamado": "",                "deadline": "Hoje",  "status": "Em Andamento", "quadrant": "NOW"},
-    {"id": 2, "code": 2, "category": "Chamado SGS",              "desc": "Abrir chamado SGS — falha no sistema de monitoramento",                "chamado": "sgsservicedesk@sgs.com", "deadline": "",      "status": "Ativo",        "quadrant": "NOW"},
-    {"id": 3, "code": 3, "category": "Atendimento Interno",      "desc": "Suporte urgente a usuário interno — reset de senha",                   "chamado": "",                "deadline": "Hoje",  "status": "Em Andamento", "quadrant": "NOW"},
+    {"id": 1, "code": 1, "category": "SGS — 1º Acesso",           "desc": "Responder solicitação de 1º acesso — usuário novo portal SGS",       "chamado": "",                    "deadline": "Hoje",  "status": "Em Andamento", "quadrant": "NOW"},
+    {"id": 2, "code": 2, "category": "Chamado SGS",               "desc": "Abrir chamado SGS — falha no sistema de monitoramento",               "chamado": "sgsservicedesk@sgs.com","deadline": "",      "status": "Ativo",        "quadrant": "NOW"},
+    {"id": 3, "code": 3, "category": "Atendimento Interno",       "desc": "Suporte urgente a usuário interno — reset de senha",                  "chamado": "",                    "deadline": "Hoje",  "status": "Em Andamento", "quadrant": "NOW"},
     # ── NÃO URGENTE — PLAN ───────────────────────────────────────────────────
-    {"id": 4, "code": 1, "category": "Documentação / Manuais",   "desc": "Formatar manual de acesso ao sistema VIEWS",                           "chamado": "",                "deadline": "30/05", "status": "Ativo",        "quadrant": "PLAN"},
-    {"id": 5, "code": 2, "category": "Desenvolvimento",          "desc": "Melhorias no painel de controle interno",                              "chamado": "",                "deadline": "",      "status": "Ativo",        "quadrant": "PLAN"},
-    {"id": 6, "code": 3, "category": "Onboarding de Colaborador","desc": "Preparar ambiente, e-mails e acessos para novo colaborador",           "chamado": "",                "deadline": "10/06", "status": "Ativo",        "quadrant": "PLAN"},
+    {"id": 4, "code": 1, "category": "Documentação / Manuais",    "desc": "Formatar manual de acesso ao sistema VIEWS",                          "chamado": "",                    "deadline": "30/05", "status": "Ativo",        "quadrant": "PLAN"},
+    {"id": 5, "code": 2, "category": "Desenvolvimento",           "desc": "Melhorias no painel de controle interno",                             "chamado": "",                    "deadline": "",      "status": "Ativo",        "quadrant": "PLAN"},
+    {"id": 6, "code": 3, "category": "Onboarding de Colaborador", "desc": "Preparar ambiente, e-mails e acessos para novo colaborador",          "chamado": "",                    "deadline": "10/06", "status": "Ativo",        "quadrant": "PLAN"},
     # ── DELEGAR ──────────────────────────────────────────────────────────────
-    {"id": 7, "code": 1, "category": "Chamado Jira",             "desc": "Encaminhar chamado Jira para equipe de desenvolvimento",               "chamado": "",                "deadline": "",      "status": "Ativo",        "quadrant": "DELEGAR"},
+    {"id": 7, "code": 1, "category": "Chamado Jira",              "desc": "Encaminhar chamado Jira para equipe de desenvolvimento",              "chamado": "",                    "deadline": "",      "status": "Ativo",        "quadrant": "DELEGAR"},
     # ── BACKLOG ───────────────────────────────────────────────────────────────
-    {"id": 8, "code": 1, "category": "Manutenção de Equipamentos","desc": "Levantamento do estado dos equipamentos internos — inventário",       "chamado": "",                "deadline": "",      "status": "Ativo",        "quadrant": "BACKLOG"},
-    {"id": 9, "code": 2, "category": "Documentação / Manuais",   "desc": "Atualizar manual de onboarding de colaboradores",                      "chamado": "",                "deadline": "",      "status": "Ativo",        "quadrant": "BACKLOG"},
+    {"id": 8, "code": 1, "category": "Manutenção de Equipamentos","desc": "Levantamento do estado dos equipamentos internos — inventário",       "chamado": "",                    "deadline": "",      "status": "Ativo",        "quadrant": "BACKLOG"},
+    {"id": 9, "code": 2, "category": "Documentação / Manuais",    "desc": "Atualizar manual de onboarding de colaboradores",                     "chamado": "",                    "deadline": "",      "status": "Ativo",        "quadrant": "BACKLOG"},
 ]
 
 
@@ -109,14 +109,17 @@ def delete_task(task_id):
 @app.route("/api/summary", methods=["GET"])
 def get_summary():
     data = load_data()
-    QUADS = ["NOW", "PLAN", "DELEGAR", "BACKLOG", "FIN_NOW", "FIN_PLAN"]
+    QUADS = ["NOW", "PLAN", "DELEGAR", "BACKLOG", "FINALIZADO"]
     rows = {}
     for cat in data["categories"]:
         rows[cat] = {q: 0 for q in QUADS}
 
     for t in data["tasks"]:
         cat = t.get("category", "Outros")
-        q = t["quadrant"]
+        q   = t["quadrant"]
+        # compatibilidade com dados antigos (FIN_NOW / FIN_PLAN → FINALIZADO)
+        if q in ("FIN_NOW", "FIN_PLAN"):
+            q = "FINALIZADO"
         if cat not in rows:
             rows[cat] = {q2: 0 for q2 in QUADS}
         if q in rows[cat]:
@@ -125,7 +128,7 @@ def get_summary():
     result, totals = [], {q: 0 for q in QUADS}
     for cat, c in rows.items():
         active = c["NOW"] + c["PLAN"] + c["DELEGAR"] + c["BACKLOG"]
-        fin    = c["FIN_NOW"] + c["FIN_PLAN"]
+        fin    = c["FINALIZADO"]
         if active + fin == 0:
             continue
         result.append({
@@ -136,10 +139,9 @@ def get_summary():
             totals[k] += c[k]
 
     total_ativo = sum(totals[k] for k in ["NOW", "PLAN", "DELEGAR", "BACKLOG"])
-    total_fin   = totals["FIN_NOW"] + totals["FIN_PLAN"]
     return jsonify({
         "rows": result,
-        "totals": {**totals, "total_ativo": total_ativo, "total_fin": total_fin, "grand_total": total_ativo + total_fin}
+        "totals": {**totals, "total_ativo": total_ativo, "total_fin": totals["FINALIZADO"], "grand_total": total_ativo + totals["FINALIZADO"]}
     })
 
 

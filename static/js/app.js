@@ -1,16 +1,15 @@
 // ── Config ───────────────────────────────────────────────────────────────────
 const Q = {
-    NOW:      { label: "Urgente — Now (Importante)",        cls: "q-now",      color: "#E57300" },
-    PLAN:     { label: "Não Urgente — Plan (Importante)",   cls: "q-plan",     color: "#1565C0" },
-    DELEGAR:  { label: "Delegar (Urgente + Não Importante)", cls: "q-delegar",  color: "#F59E0B" },
-    BACKLOG:  { label: "Backlog (Não Urgente + Não Imp.)",  cls: "q-backlog",  color: "#546E7A" },
-    FIN_NOW:  { label: "Finalizados — Now",                 cls: "q-fin-now",  color: "#2E7D32" },
-    FIN_PLAN: { label: "Finalizados — Plan",                cls: "q-fin-plan", color: "#00695C" },
+    NOW:       { label: "Urgente — Now (Importante)",        cls: "q-now",      color: "#E57300" },
+    PLAN:      { label: "Não Urgente — Plan (Importante)",   cls: "q-plan",     color: "#1565C0" },
+    DELEGAR:   { label: "Delegar (Urgente + Não Importante)", cls: "q-delegar",  color: "#F59E0B" },
+    BACKLOG:   { label: "Backlog (Não Urgente + Não Imp.)",  cls: "q-backlog",  color: "#546E7A" },
+    FINALIZADO:{ label: "Finalizados",                       cls: "q-fin",      color: "#2E7D32" },
 };
 
 const TAB_QUADRANT = {
     now: "NOW", plan: "PLAN", delegar: "DELEGAR",
-    backlog: "BACKLOG", fin_now: "FIN_NOW", fin_plan: "FIN_PLAN",
+    backlog: "BACKLOG", finalizado: "FINALIZADO",
 };
 
 // Color per task category
@@ -106,11 +105,11 @@ async function loadResumo() {
 }
 
 function updateKpis(totals) {
-    document.getElementById("kpi-now").textContent     = totals.NOW     ?? 0;
-    document.getElementById("kpi-plan").textContent    = totals.PLAN    ?? 0;
-    document.getElementById("kpi-delegar").textContent = totals.DELEGAR ?? 0;
-    document.getElementById("kpi-backlog").textContent = totals.BACKLOG ?? 0;
-    document.getElementById("kpi-fin").textContent     = totals.total_fin ?? 0;
+    document.getElementById("kpi-now").textContent     = totals.NOW        ?? 0;
+    document.getElementById("kpi-plan").textContent    = totals.PLAN       ?? 0;
+    document.getElementById("kpi-delegar").textContent = totals.DELEGAR    ?? 0;
+    document.getElementById("kpi-backlog").textContent = totals.BACKLOG    ?? 0;
+    document.getElementById("kpi-fin").textContent     = totals.FINALIZADO ?? 0;
 }
 
 function renderSummaryTable({ rows, totals }) {
@@ -128,15 +127,13 @@ function renderSummaryTable({ rows, totals }) {
         const tr = document.createElement("tr");
         const color = CAT_COLORS[r.cat] ?? "#555";
         tr.innerHTML = `<td><span class="cat-dot" style="background:${color}"></span>${escHtml(r.cat)}</td>`;
-        tr.appendChild(mkCell(r.NOW,        "col-now"));
-        tr.appendChild(mkCell(r.PLAN,       "col-plan"));
-        tr.appendChild(mkCell(r.DELEGAR,    "col-delegar"));
-        tr.appendChild(mkCell(r.BACKLOG,    "col-backlog"));
-        tr.appendChild(mkCell(r.total_ativo,"col-tativo"));
-        tr.appendChild(mkCell(r.FIN_NOW,    "col-finnow"));
-        tr.appendChild(mkCell(r.FIN_PLAN,   "col-finplan"));
-        tr.appendChild(mkCell(r.total_fin,  "col-tfin"));
-        tr.appendChild(mkCell(r.grand_total,"col-grand"));
+        tr.appendChild(mkCell(r.NOW,         "col-now"));
+        tr.appendChild(mkCell(r.PLAN,        "col-plan"));
+        tr.appendChild(mkCell(r.DELEGAR,     "col-delegar"));
+        tr.appendChild(mkCell(r.BACKLOG,     "col-backlog"));
+        tr.appendChild(mkCell(r.total_ativo, "col-tativo"));
+        tr.appendChild(mkCell(r.FINALIZADO,  "col-tfin"));
+        tr.appendChild(mkCell(r.grand_total, "col-grand"));
         tbody.appendChild(tr);
     });
 
@@ -144,15 +141,13 @@ function renderSummaryTable({ rows, totals }) {
     const tr = document.createElement("tr");
     tr.className = "totals";
     tr.innerHTML = `<td>TOTAL</td>`;
-    tr.appendChild(mkCell(totals.NOW,        "col-now"));
-    tr.appendChild(mkCell(totals.PLAN,       "col-plan"));
-    tr.appendChild(mkCell(totals.DELEGAR,    "col-delegar"));
-    tr.appendChild(mkCell(totals.BACKLOG,    "col-backlog"));
-    tr.appendChild(mkCell(totals.total_ativo,"col-tativo"));
-    tr.appendChild(mkCell(totals.FIN_NOW,    "col-finnow"));
-    tr.appendChild(mkCell(totals.FIN_PLAN,   "col-finplan"));
-    tr.appendChild(mkCell(totals.total_fin,  "col-tfin"));
-    tr.appendChild(mkCell(totals.grand_total,"col-grand"));
+    tr.appendChild(mkCell(totals.NOW,         "col-now"));
+    tr.appendChild(mkCell(totals.PLAN,        "col-plan"));
+    tr.appendChild(mkCell(totals.DELEGAR,     "col-delegar"));
+    tr.appendChild(mkCell(totals.BACKLOG,     "col-backlog"));
+    tr.appendChild(mkCell(totals.total_ativo, "col-tativo"));
+    tr.appendChild(mkCell(totals.FINALIZADO,  "col-tfin"));
+    tr.appendChild(mkCell(totals.grand_total, "col-grand"));
     tbody.appendChild(tr);
 }
 
@@ -327,15 +322,11 @@ document.getElementById("modal-save-btn").addEventListener("click", async () => 
 
     if (!task.desc) { alert("A descrição é obrigatória."); return; }
 
-    // Ao finalizar, move automaticamente para o quadrante correto
+    // Ao finalizar, move para FINALIZADO; ao reativar, volta para NOW
     if (task.status === "Finalizado") {
-        const toFin = { NOW: "FIN_NOW", PLAN: "FIN_PLAN", DELEGAR: "FIN_NOW", BACKLOG: "FIN_PLAN" };
-        task.quadrant = toFin[task.quadrant] ?? task.quadrant;
-    }
-    // Ao reativar desde um quadrante finalizado, volta para o ativo correspondente
-    if (task.status !== "Finalizado") {
-        const toActive = { FIN_NOW: "NOW", FIN_PLAN: "PLAN" };
-        task.quadrant = toActive[task.quadrant] ?? task.quadrant;
+        task.quadrant = "FINALIZADO";
+    } else if (task.quadrant === "FINALIZADO") {
+        task.quadrant = "NOW";
     }
 
     try {
