@@ -327,6 +327,17 @@ document.getElementById("modal-save-btn").addEventListener("click", async () => 
 
     if (!task.desc) { alert("A descrição é obrigatória."); return; }
 
+    // Ao finalizar, move automaticamente para o quadrante correto
+    if (task.status === "Finalizado") {
+        const toFin = { NOW: "FIN_NOW", PLAN: "FIN_PLAN", DELEGAR: "FIN_NOW", BACKLOG: "FIN_PLAN" };
+        task.quadrant = toFin[task.quadrant] ?? task.quadrant;
+    }
+    // Ao reativar desde um quadrante finalizado, volta para o ativo correspondente
+    if (task.status !== "Finalizado") {
+        const toActive = { FIN_NOW: "NOW", FIN_PLAN: "PLAN" };
+        task.quadrant = toActive[task.quadrant] ?? task.quadrant;
+    }
+
     try {
         if (editing !== null) {
             await api.put(`/api/tasks/${editing}`, task);
