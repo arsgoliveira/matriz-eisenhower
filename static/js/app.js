@@ -2,7 +2,7 @@
 const Q = {
     NOW:      { label: "Urgente — Now (Importante)",        cls: "q-now",      color: "#E57300" },
     PLAN:     { label: "Não Urgente — Plan (Importante)",   cls: "q-plan",     color: "#1565C0" },
-    DELEGAR:  { label: "Delegar (Urgente + Não Importante)","cls": "q-delegar", color: "#F59E0B" },
+    DELEGAR:  { label: "Delegar (Urgente + Não Importante)", cls: "q-delegar",  color: "#F59E0B" },
     BACKLOG:  { label: "Backlog (Não Urgente + Não Imp.)",  cls: "q-backlog",  color: "#546E7A" },
     FIN_NOW:  { label: "Finalizados — Now",                 cls: "q-fin-now",  color: "#2E7D32" },
     FIN_PLAN: { label: "Finalizados — Plan",                cls: "q-fin-plan", color: "#00695C" },
@@ -13,8 +13,35 @@ const TAB_QUADRANT = {
     backlog: "BACKLOG", fin_now: "FIN_NOW", fin_plan: "FIN_PLAN",
 };
 
+// Color per task category
+const CAT_COLORS = {
+    "SGS — 1º Acesso":            "#7B1FA2",
+    "Chamado SGS":                "#C62828",
+    "Chamado Jira":               "#1565C0",
+    "Atendimento Interno":        "#E65100",
+    "Onboarding de Colaborador":  "#2E7D32",
+    "Offboarding de Colaborador": "#B71C1C",
+    "Manutenção de Equipamentos": "#FF6F00",
+    "Desenvolvimento":            "#00695C",
+    "Documentação / Manuais":     "#546E7A",
+    "Outros":                     "#795548",
+};
+
+// Short labels for chart x-axis
+const CAT_SHORT = {
+    "SGS — 1º Acesso":            "SGS 1º Acesso",
+    "Chamado SGS":                "Chamado SGS",
+    "Chamado Jira":               "Chamado Jira",
+    "Atendimento Interno":        "Atend. Interno",
+    "Onboarding de Colaborador":  "Onboarding",
+    "Offboarding de Colaborador": "Offboarding",
+    "Manutenção de Equipamentos": "Manutenção",
+    "Desenvolvimento":            "Desenvolvimento",
+    "Documentação / Manuais":     "Documentação",
+    "Outros":                     "Outros",
+};
+
 // ── State ─────────────────────────────────────────────────────────────────────
-let team    = [];
 let chart   = null;
 let editing = null; // null = adding new | number = task id being edited
 
@@ -55,7 +82,7 @@ function switchTab(tabName) {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
 
-    const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+    const btn     = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
     const content = document.getElementById(`tab-${tabName}`);
     if (btn)     btn.classList.add("active");
     if (content) content.classList.add("active");
@@ -72,18 +99,18 @@ function switchTab(tabName) {
 async function loadResumo() {
     try {
         const data = await api.get("/api/summary");
+        updateKpis(data.totals);
         renderSummaryTable(data);
-        populateChartFilter(data.rows);
-        renderResumoChart(data, document.getElementById("chart-dev-filter").value);
+        renderResumoChart(data);
     } catch { /* erro já exibido pelo api helper */ }
 }
 
-function populateChartFilter(rows) {
-    const sel     = document.getElementById("chart-dev-filter");
-    const current = sel.value;
-    sel.innerHTML = `<option value="all">🌐 Geral (Todos)</option>` +
-        rows.map(r => `<option value="${escHtml(r.dev)}">${escHtml(r.dev)}</option>`).join("");
-    if ([...sel.options].some(o => o.value === current)) sel.value = current;
+function updateKpis(totals) {
+    document.getElementById("kpi-now").textContent     = totals.NOW     ?? 0;
+    document.getElementById("kpi-plan").textContent    = totals.PLAN    ?? 0;
+    document.getElementById("kpi-delegar").textContent = totals.DELEGAR ?? 0;
+    document.getElementById("kpi-backlog").textContent = totals.BACKLOG ?? 0;
+    document.getElementById("kpi-fin").textContent     = totals.total_fin ?? 0;
 }
 
 function renderSummaryTable({ rows, totals }) {
@@ -99,7 +126,8 @@ function renderSummaryTable({ rows, totals }) {
     tbody.innerHTML = "";
     rows.forEach(r => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${escHtml(r.dev)}</td>`;
+        const color = CAT_COLORS[r.cat] ?? "#555";
+        tr.innerHTML = `<td><span class="cat-dot" style="background:${color}"></span>${escHtml(r.cat)}</td>`;
         tr.appendChild(mkCell(r.NOW,        "col-now"));
         tr.appendChild(mkCell(r.PLAN,       "col-plan"));
         tr.appendChild(mkCell(r.DELEGAR,    "col-delegar"));
@@ -128,16 +156,16 @@ function renderSummaryTable({ rows, totals }) {
     tbody.appendChild(tr);
 }
 
-function renderResumoChart({ rows }, filter = "all") {
-    const filteredRows = filter === "all" ? rows : rows.filter(r => r.dev === filter);
-    const devs    = filteredRows.map(r => r.dev);
+function renderResumoChart({ rows }) {
+    const active = rows.filter(r => r.total_ativo > 0);
+    const labels = active.map(r => CAT_SHORT[r.cat] ?? r.cat);
     const ACTIVE  = ["NOW", "PLAN", "DELEGAR", "BACKLOG"];
     const colors  = { NOW: "#E57300", PLAN: "#1565C0", DELEGAR: "#F59E0B", BACKLOG: "#546E7A" };
-    const labels  = { NOW: "Urgente Now", PLAN: "Não Urgente Plan", DELEGAR: "Delegar", BACKLOG: "Backlog" };
+    const labelsQ = { NOW: "Urgente Now", PLAN: "Não Urgente Plan", DELEGAR: "Delegar", BACKLOG: "Backlog" };
 
     const datasets = ACTIVE.map(q => ({
-        label:           labels[q],
-        data:            filteredRows.map(r => r[q]),
+        label:           labelsQ[q],
+        data:            active.map(r => r[q]),
         backgroundColor: colors[q] + "CC",
         borderColor:     colors[q],
         borderWidth:     1.5,
@@ -149,7 +177,7 @@ function renderResumoChart({ rows }, filter = "all") {
     const ctx = document.getElementById("resumo-chart").getContext("2d");
     chart = new Chart(ctx, {
         type: "bar",
-        data: { labels: devs, datasets },
+        data: { labels, datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -158,7 +186,7 @@ function renderResumoChart({ rows }, filter = "all") {
                 tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}` } },
             },
             scales: {
-                x: { grid: { display: false } },
+                x: { grid: { display: false }, ticks: { maxRotation: 30 } },
                 y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "#f0f0f0" } },
             },
         },
@@ -196,11 +224,11 @@ function renderTaskTab(container, quadrant, tasks) {
                     <thead>
                         <tr>
                             <th class="col-w-code">#</th>
-                            <th class="col-w-resp">Responsável</th>
+                            <th class="col-w-cat">Tipo de Tarefa</th>
                             <th>Descrição</th>
+                            <th class="col-w-chamado">Chamado</th>
                             <th class="col-w-deadline">Prazo</th>
                             <th class="col-w-status">Status</th>
-                            <th class="col-w-quadrant">Quadrante</th>
                             <th class="col-w-actions">Ações</th>
                         </tr>
                     </thead>
@@ -211,12 +239,10 @@ function renderTaskTab(container, quadrant, tasks) {
             </div>
         </div>`;
 
-    // Add button
     container.querySelector(".btn-add").addEventListener("click", () => {
         openModal(null, quadrant);
     });
 
-    // Row actions (edit / delete)
     container.querySelector(`#tbody-${tabKey}`).addEventListener("click", async e => {
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
@@ -235,15 +261,18 @@ function renderTaskTab(container, quadrant, tasks) {
 
 function buildTaskRow(t) {
     const statusCls = { "Ativo": "ativo", "Finalizado": "finalizado", "Em Andamento": "andamento" }[t.status] ?? "ativo";
-    const qLabel    = Q[t.quadrant]?.label ?? t.quadrant;
+    const color = CAT_COLORS[t.category] ?? "#555";
+    const chamadoHtml = t.chamado
+        ? `<span class="chamado-chip">${escHtml(t.chamado)}</span>`
+        : `<span class="chamado-empty">—</span>`;
     return `
         <tr>
             <td><span class="code-badge">${t.code}</span></td>
-            <td>${escHtml(t.responsible)}</td>
+            <td><span class="cat-badge" style="border-left-color:${color}">${escHtml(t.category ?? "")}</span></td>
             <td>${escHtml(t.desc)}</td>
+            <td>${chamadoHtml}</td>
             <td>${t.deadline ? `<span class="deadline-chip">${escHtml(t.deadline)}</span>` : "—"}</td>
             <td><span class="status-chip ${statusCls}">${escHtml(t.status)}</span></td>
-            <td class="col-quadrant-label">${escHtml(qLabel)}</td>
             <td>
                 <button type="button" class="btn-icon edit"   data-action="edit"   data-id="${t.id}" title="Editar">✏️</button>
                 <button type="button" class="btn-icon delete" data-action="delete" data-id="${t.id}" title="Remover">🗑️</button>
@@ -261,22 +290,19 @@ const modal = document.getElementById("task-modal");
 function openModal(task, defaultQuadrant) {
     editing = task ? task.id : null;
 
-    document.getElementById("modal-title").textContent = task ? "Editar Tarefa" : "Adicionar Tarefa";
-    document.getElementById("modal-task-id").value  = task ? task.id       : "";
-    document.getElementById("modal-code").value     = task ? task.code     : "";
-    document.getElementById("modal-desc").value     = task ? task.desc     : "";
-    document.getElementById("modal-deadline").value = task ? task.deadline : "";
+    document.getElementById("modal-title").textContent     = task ? "Editar Tarefa" : "Adicionar Tarefa";
+    document.getElementById("modal-task-id").value         = task ? task.id       : "";
+    document.getElementById("modal-code").value            = task ? task.code     : "";
+    document.getElementById("modal-desc").value            = task ? task.desc     : "";
+    document.getElementById("modal-chamado").value         = task ? (task.chamado ?? "") : "";
+    document.getElementById("modal-deadline").value        = task ? task.deadline : "";
 
-    // Responsible dropdown
-    const selResp = document.getElementById("modal-responsible");
-    selResp.innerHTML = team.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join("");
-    if (task) selResp.value = task.responsible;
+    const selCat = document.getElementById("modal-category");
+    selCat.value = task ? (task.category ?? "Outros") : "Outros";
 
-    // Quadrant
     const selQ = document.getElementById("modal-quadrant");
     selQ.value = task ? task.quadrant : (defaultQuadrant ?? "NOW");
 
-    // Status
     const selStatus = document.getElementById("modal-status");
     selStatus.value = task ? task.status : "Ativo";
 
@@ -290,12 +316,13 @@ document.getElementById("modal-cancel-btn").addEventListener("click", closeModal
 
 document.getElementById("modal-save-btn").addEventListener("click", async () => {
     const task = {
-        code:        Number(document.getElementById("modal-code").value) || 0,
-        responsible: document.getElementById("modal-responsible").value,
-        desc:        document.getElementById("modal-desc").value.trim(),
-        deadline:    document.getElementById("modal-deadline").value.trim(),
-        status:      document.getElementById("modal-status").value,
-        quadrant:    document.getElementById("modal-quadrant").value,
+        code:     Number(document.getElementById("modal-code").value) || 0,
+        category: document.getElementById("modal-category").value,
+        desc:     document.getElementById("modal-desc").value.trim(),
+        chamado:  document.getElementById("modal-chamado").value.trim(),
+        deadline: document.getElementById("modal-deadline").value.trim(),
+        status:   document.getElementById("modal-status").value,
+        quadrant: document.getElementById("modal-quadrant").value,
     };
 
     if (!task.desc) { alert("A descrição é obrigatória."); return; }
@@ -332,25 +359,10 @@ function escHtml(str) {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
-async function init() {
-    try {
-        team = await api.get("/api/team");
-    } catch {
-        team = [];
-    }
-
+function init() {
     document.querySelectorAll(".tab-btn").forEach(btn => {
         btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
-
-    document.getElementById("chart-dev-filter").addEventListener("change", async () => {
-        try {
-            const data   = await api.get("/api/summary");
-            const filter = document.getElementById("chart-dev-filter").value;
-            renderResumoChart(data, filter);
-        } catch { /* erro já exibido pelo api helper */ }
-    });
-
     switchTab("resumo");
 }
 

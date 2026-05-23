@@ -98,6 +98,50 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 }
 
 /* ══════════════════════════════════════════════════════════
+   KPI CARDS
+══════════════════════════════════════════════════════════ */
+.kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.kpi-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.09);
+    padding: 18px 20px;
+    border-top: 4px solid #ddd;
+    text-align: center;
+}
+.kpi-card.kpi-now     { border-top-color: var(--now); }
+.kpi-card.kpi-plan    { border-top-color: var(--plan); }
+.kpi-card.kpi-delegar { border-top-color: var(--delegar); }
+.kpi-card.kpi-backlog { border-top-color: var(--backlog); }
+.kpi-card.kpi-fin     { border-top-color: var(--fin-now); }
+
+.kpi-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 6px;
+}
+.kpi-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #222;
+    line-height: 1;
+}
+.kpi-card.kpi-now     .kpi-value { color: var(--now); }
+.kpi-card.kpi-plan    .kpi-value { color: var(--plan); }
+.kpi-card.kpi-delegar .kpi-value { color: #b45309; }
+.kpi-card.kpi-backlog .kpi-value { color: var(--backlog); }
+.kpi-card.kpi-fin     .kpi-value { color: var(--fin-now); }
+
+/* ══════════════════════════════════════════════════════════
    RESUMO TAB
 ══════════════════════════════════════════════════════════ */
 .resumo-title {
@@ -135,12 +179,27 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
     text-align: center;
     border-bottom: 1px solid #eee;
 }
-.summary-table tbody tr td:first-child { text-align: left; font-weight: 600; }
+.summary-table tbody tr td:first-child {
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
 
 .summary-table tbody tr:last-child.totals td {
     background: #1a1a2e !important;
     color: #fff;
     font-weight: 800;
+}
+
+/* Category dot in summary table */
+.cat-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 7px;
+    flex-shrink: 0;
+    vertical-align: middle;
 }
 
 /* Column color bands */
@@ -158,7 +217,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 .summary-table td.zero { color: #bbb !important; font-weight: 400 !important; }
 
 /* Chart */
-.chart-wrap { position: relative; height: 340px; }
+.chart-wrap { position: relative; height: 300px; }
 
 /* Legend */
 .legend-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
@@ -212,7 +271,7 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
     width: 100%;
     border-collapse: collapse;
     font-size: 0.87rem;
-    min-width: 700px;
+    min-width: 760px;
 }
 
 .task-table thead tr th {
@@ -241,6 +300,33 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
 }
 .task-table tbody tr:hover td { background: #fafafa; }
 .task-table tbody tr:last-child td { border-bottom: none; }
+
+/* Category badge in task rows */
+.cat-badge {
+    display: inline-block;
+    border-left: 3px solid #ccc;
+    padding: 2px 8px 2px 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #333;
+    background: #f7f7f7;
+    border-radius: 0 4px 4px 0;
+    white-space: nowrap;
+}
+
+/* Ticket / chamado chip */
+.chamado-chip {
+    display: inline-block;
+    background: #EDE7F6;
+    border: 1px solid #B39DDB;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    color: #4527A0;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.chamado-empty { color: #ccc; font-size: 0.85rem; }
 
 .code-badge {
     display: inline-block;
@@ -296,6 +382,14 @@ main { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
     font-style: italic;
 }
 
+/* ── Task table column widths ───────────────────────────── */
+.task-table .col-w-code    { width: 56px; }
+.task-table .col-w-cat     { width: 190px; }
+.task-table .col-w-chamado { width: 130px; }
+.task-table .col-w-deadline{ width: 120px; }
+.task-table .col-w-status  { width: 110px; }
+.task-table .col-w-actions { width: 72px; }
+
 /* ══════════════════════════════════════════════════════════
    MODAL
 ══════════════════════════════════════════════════════════ */
@@ -304,7 +398,7 @@ dialog {
     border-radius: 10px;
     box-shadow: 0 8px 40px rgba(0,0,0,0.22);
     padding: 0;
-    width: 520px;
+    width: 540px;
     max-width: 96vw;
 }
 dialog::backdrop { background: rgba(0,0,0,0.45); }
@@ -338,6 +432,13 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
     margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+}
+.label-hint {
+    font-size: 0.72rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #aaa;
 }
 .form-group input,
 .form-group select,
@@ -402,13 +503,10 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
 .summary-table thead .th-finplan { background: var(--fin-plan); }
 .summary-table thead .th-tfin    { background: #1B5E20; }
 
-/* ── Chart header + filter ──────────────────────────────── */
+/* ── Chart header ───────────────────────────────────────── */
 .chart-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
     margin-bottom: 14px;
 }
 .chart-section-title {
@@ -418,32 +516,6 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0;
-}
-.chart-filter-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.chart-filter-group label {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #555;
-    white-space: nowrap;
-}
-.chart-filter-group select {
-    padding: 6px 14px;
-    border: 2px solid var(--now);
-    border-radius: var(--radius);
-    font-size: 0.88rem;
-    color: #333;
-    background: #fff;
-    cursor: pointer;
-    min-width: 190px;
-    transition: border-color 0.15s;
-}
-.chart-filter-group select:focus {
-    outline: none;
-    border-color: #bf4800;
 }
 
 /* ── Legend card ────────────────────────────────────────── */
@@ -457,88 +529,6 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
     margin-bottom: 10px;
 }
 
-/* ── Task table column widths ───────────────────────────── */
-.task-table .col-w-code     { width: 60px; }
-.task-table .col-w-resp     { width: 160px; }
-.task-table .col-w-deadline { width: 130px; }
-.task-table .col-w-status   { width: 110px; }
-.task-table .col-w-quadrant { width: 140px; }
-.task-table .col-w-actions  { width: 80px; }
-.task-table .col-quadrant-label { font-size: 0.78rem; color: #666; }
-
-/* ── Resumo header ──────────────────────────────────────── */
-.resumo-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 0;
-}
-.btn-team {
-    padding: 8px 16px;
-    background: var(--plan);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius);
-    font-size: 0.85rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.btn-team:hover { background: #0D47A1; }
-
-/* ── Team modal ─────────────────────────────────────────── */
-.team-modal-hint {
-    font-size: 0.82rem;
-    color: #888;
-    margin-bottom: 14px;
-    line-height: 1.5;
-}
-.team-list {
-    list-style: none;
-    max-height: 280px;
-    overflow-y: auto;
-    border: 1px solid #eee;
-    border-radius: var(--radius);
-    margin-bottom: 14px;
-}
-.team-list-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 14px;
-    border-bottom: 1px solid #f0f0f0;
-    font-size: 0.9rem;
-}
-.team-list-item:last-child { border-bottom: none; }
-.team-list-empty {
-    padding: 20px;
-    text-align: center;
-    color: #bbb;
-    font-style: italic;
-    font-size: 0.88rem;
-}
-.team-add-row {
-    display: flex;
-    gap: 10px;
-}
-.team-add-row input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: var(--radius);
-    font-size: 0.9rem;
-    color: #222;
-    transition: border-color 0.15s;
-}
-.team-add-row input:focus {
-    outline: none;
-    border-color: var(--plan);
-}
-
 /* ── Loading cell ───────────────────────────────────────── */
 .loading-cell {
     text-align: center;
@@ -546,7 +536,7 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
     color: #bbb;
 }
 
-/* ── API error banner (modo Flask) ──────────────────────── */
+/* ── API error banner ───────────────────────────────────── */
 .api-error-banner {
     display: none;
     position: fixed;
@@ -567,10 +557,12 @@ dialog::backdrop { background: rgba(0,0,0,0.45); }
 }
 
 /* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 700px) {
+@media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 600px) {
     header h1 { font-size: 1rem; }
     main { padding: 16px 10px; }
     .form-row { grid-template-columns: 1fr; }
-    .resumo-header { flex-direction: column; }
-    .team-add-row { flex-direction: column; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
 }

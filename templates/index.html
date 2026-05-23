@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HidroMares · SGS — Matriz de Eisenhower</title>
+<title>HidroMares T.I. — Matriz de Eisenhower</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -11,8 +11,8 @@
 
 <header>
   <div>
-    <h1><span>HidroMares · SGS</span> — Matriz de Eisenhower</h1>
-    <p class="header-sub">Gestão de tarefas do Time T.I.</p>
+    <h1><span>HidroMares</span> · T.I. — Rotina Diária</h1>
+    <p class="header-sub">Gestão pessoal de tarefas — Matriz de Eisenhower</p>
   </div>
 </header>
 
@@ -34,16 +34,40 @@
   ═══════════════════════════════════════════════════════ -->
   <div id="tab-resumo" class="tab-content active">
 
+    <!-- KPI Cards -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi-card kpi-now">
+        <p class="kpi-label">Urgente Now</p>
+        <p class="kpi-value" id="kpi-now">–</p>
+      </div>
+      <div class="kpi-card kpi-plan">
+        <p class="kpi-label">Não Urgente Plan</p>
+        <p class="kpi-value" id="kpi-plan">–</p>
+      </div>
+      <div class="kpi-card kpi-delegar">
+        <p class="kpi-label">Delegar</p>
+        <p class="kpi-value" id="kpi-delegar">–</p>
+      </div>
+      <div class="kpi-card kpi-backlog">
+        <p class="kpi-label">Backlog</p>
+        <p class="kpi-value" id="kpi-backlog">–</p>
+      </div>
+      <div class="kpi-card kpi-fin">
+        <p class="kpi-label">Total Finalizado</p>
+        <p class="kpi-value" id="kpi-fin">–</p>
+      </div>
+    </div>
+
     <div class="card">
-      <p class="resumo-title">HidroMares · SGS — Matriz de Eisenhower</p>
-      <p class="resumo-sub">Resumo de tarefas por desenvolvedor e quadrante</p>
+      <p class="resumo-title">Distribuição por Tipo de Tarefa</p>
+      <p class="resumo-sub">Quantidade de tarefas ativas por categoria e quadrante</p>
 
       <!-- Summary Table -->
       <div class="summary-table-wrap">
         <table class="summary-table">
           <thead>
             <tr>
-              <th>Desenvolvedor</th>
+              <th>Tipo de Tarefa</th>
               <th class="th-now">Urgente<br>Now</th>
               <th class="th-plan">Não Urgente<br>Plan</th>
               <th class="th-delegar">Delegar</th>
@@ -56,20 +80,14 @@
             </tr>
           </thead>
           <tbody id="summary-tbody">
-            <tr><td colspan="10" style="text-align:center;padding:20px;color:#bbb">Carregando…</td></tr>
+            <tr><td colspan="10" class="loading-cell">Carregando…</td></tr>
           </tbody>
         </table>
       </div>
 
       <!-- Chart -->
       <div class="chart-header">
-        <h3 class="chart-section-title">Tarefas ativas por desenvolvedor</h3>
-        <div class="chart-filter-group">
-          <label for="chart-dev-filter">Colaborador:</label>
-          <select id="chart-dev-filter">
-            <option value="all">🌐 Geral (Todos)</option>
-          </select>
-        </div>
+        <h3 class="chart-section-title">Tarefas ativas por tipo de tarefa</h3>
       </div>
       <div class="chart-wrap">
         <canvas id="resumo-chart"></canvas>
@@ -78,12 +96,12 @@
 
     <!-- Legend -->
     <div class="card legend-card">
-      <p class="legend-title">Legenda da Matriz</p>
+      <p class="legend-title">Legenda da Matriz de Eisenhower</p>
       <table class="legend-table">
-        <tr><td>Urgente + Importante</td>      <td>Now — Fazer imediatamente</td></tr>
-        <tr><td>Não Urgente + Importante</td>  <td>Plan/Schedule — Agendar</td></tr>
-        <tr><td>Urgente + Não Importante</td>  <td>Delegar — Passar para outro</td></tr>
-        <tr><td>Não Urgente + Não Importante</td><td>Backlog — Eliminar ou postergar</td></tr>
+        <tr><td>Urgente + Importante</td>      <td><strong>Now</strong> — Fazer imediatamente. Não adiar.</td></tr>
+        <tr><td>Não Urgente + Importante</td>  <td><strong>Plan</strong> — Agendar. Planejar para fazer.</td></tr>
+        <tr><td>Urgente + Não Importante</td>  <td><strong>Delegar</strong> — Passar para outro responsável.</td></tr>
+        <tr><td>Não Urgente + Não Importante</td><td><strong>Backlog</strong> — Eliminar ou postergar.</td></tr>
       </table>
     </div>
   </div>
@@ -113,27 +131,42 @@
     <div class="form-row">
       <div class="form-group">
         <label>Código #</label>
-        <input type="number" id="modal-code" min="1" placeholder="Ex: 2">
+        <input type="number" id="modal-code" min="1" placeholder="Ex: 1">
       </div>
       <div class="form-group">
         <label>Quadrante</label>
         <select id="modal-quadrant">
-          <option value="NOW">Urgente Now</option>
-          <option value="PLAN">Não Urgente Plan</option>
-          <option value="DELEGAR">Delegar</option>
-          <option value="BACKLOG">Backlog</option>
-          <option value="FIN_NOW">Finalizado Now</option>
-          <option value="FIN_PLAN">Finalizado Plan</option>
+          <option value="NOW">🔴 Urgente Now</option>
+          <option value="PLAN">🔵 Não Urgente Plan</option>
+          <option value="DELEGAR">🟡 Delegar</option>
+          <option value="BACKLOG">⚪ Backlog</option>
+          <option value="FIN_NOW">✅ Finalizado Now</option>
+          <option value="FIN_PLAN">✅ Finalizado Plan</option>
         </select>
       </div>
     </div>
     <div class="form-group">
-      <label>Responsável</label>
-      <select id="modal-responsible"></select>
+      <label>Tipo de Tarefa</label>
+      <select id="modal-category">
+        <option value="SGS — 1º Acesso">📧 SGS — 1º Acesso</option>
+        <option value="Chamado SGS">🎫 Chamado SGS</option>
+        <option value="Chamado Jira">🔷 Chamado Jira</option>
+        <option value="Atendimento Interno">🤝 Atendimento Interno</option>
+        <option value="Onboarding de Colaborador">✅ Onboarding de Colaborador</option>
+        <option value="Offboarding de Colaborador">🚪 Offboarding de Colaborador</option>
+        <option value="Manutenção de Equipamentos">🔧 Manutenção de Equipamentos</option>
+        <option value="Desenvolvimento">💻 Desenvolvimento</option>
+        <option value="Documentação / Manuais">📄 Documentação / Manuais</option>
+        <option value="Outros">📌 Outros</option>
+      </select>
     </div>
     <div class="form-group">
       <label>Descrição</label>
       <textarea id="modal-desc" placeholder="Descreva a tarefa…"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Nº Chamado <span class="label-hint">(SGS / Jira — opcional)</span></label>
+      <input type="text" id="modal-chamado" placeholder="Ex: SGS-1234 ou JIRA-567">
     </div>
     <div class="form-row">
       <div class="form-group">
