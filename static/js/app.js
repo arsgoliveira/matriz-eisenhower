@@ -16,15 +16,15 @@ const TAB_QUADRANT = {
 // Color per task category
 const CAT_COLORS = {
     "SGS — 1º Acesso":            "#7B1FA2",
-    "Chamado SGS":                "#C62828",
-    "Chamado Jira":               "#1565C0",
-    "Atendimento Interno":        "#E65100",
+    "Chamado SGS":                "#D32F2F", // vermelho
+    "Chamado Jira":               "#E65100", // laranja
+    "Atendimento Interno":        "#0277BD",
     "Onboarding de Colaborador":  "#2E7D32",
-    "Offboarding de Colaborador": "#B71C1C",
-    "Manutenção de Equipamentos": "#FF6F00",
+    "Offboarding de Colaborador": "#880E4F",
+    "Manutenção de Equipamentos": "#F9A825",
     "Desenvolvimento":            "#00695C",
     "Documentação / Manuais":     "#546E7A",
-    "Outros":                     "#795548",
+    "Outros":                     "#6D4C41",
 };
 
 // Short labels for chart x-axis
