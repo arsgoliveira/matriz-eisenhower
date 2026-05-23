@@ -54,7 +54,11 @@ function dbGetCategories() { return TASK_CATEGORIES; }
 
 function dbGetTasks(quadrant) {
     const all = storageTasks();
-    return quadrant ? all.filter(t => t.quadrant === quadrant) : all;
+    if (!quadrant) return all;
+    if (quadrant === "FINALIZADO") {
+        return all.filter(t => t.quadrant === "FINALIZADO" || t.quadrant === "FIN_NOW" || t.quadrant === "FIN_PLAN");
+    }
+    return all.filter(t => t.quadrant === quadrant);
 }
 
 function dbCreate(task) {
